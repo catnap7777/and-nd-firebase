@@ -293,11 +293,14 @@ public class MainActivity extends AppCompatActivity {
         //.. User of if with RC_SIGN_IN here means... if the activity that we're being returned from is our login flow,
         //.. execute the if statement and then check for RESULT_OK or RESULT_CANCELED
         if (requestCode == RC_SIGN_IN) {
+
             if (resultCode == RESULT_OK) {
                 Toast.makeText(this, "Signed In!", Toast.LENGTH_SHORT).show();
             } else if (resultCode == RESULT_CANCELED) {
                 Toast.makeText(this, "Signed In Canceled", Toast.LENGTH_SHORT).show();
                 finish();
+            }
+
             } else if (requestCode == RC_PHOTO_PICKER && resultCode == RESULT_OK) {  //to get photos
                 //Uri selectedImageUri = Uri.parse("R.drawable.thor_poster");
                 Uri selectedImageUri = data.getData();
@@ -341,7 +344,6 @@ public class MainActivity extends AppCompatActivity {
                         }
                     });
             }
-        }
     }
 
     @Override
