@@ -153,8 +153,11 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
 
+                //.. get any messages that were added to the database (on initial startup or after
+                //..  while app is "active"
                 FriendlyMessage friendlyMessage = dataSnapshot.getValue(FriendlyMessage.class);
-                //.. mMessageAdapter is the list adapter
+
+                //.. mMessageAdapter is the list adapter to display the list of messages in the app
                 mMessageAdapter.add(friendlyMessage);
 
             }
@@ -180,7 +183,10 @@ public class MainActivity extends AppCompatActivity {
             }
         };
 
+        //.. attaches the "messages" node to the listener
         mMessagesDatabaseReference.addChildEventListener(mChildEventListener);
+
+
 
 //        mAuthStateListener = new FirebaseAuth.AuthStateListener() {
 //            @Override
