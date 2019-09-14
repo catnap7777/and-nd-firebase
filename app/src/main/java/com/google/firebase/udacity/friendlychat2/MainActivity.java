@@ -50,7 +50,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
 
-    //test update to fork via android studio2
+    //test update to fork via android studio3
 
     private static final String TAG = "MainActivity";
 
