@@ -267,7 +267,7 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == RC_SIGN_IN) {
             if (resultCode == RESULT_OK) {
                 Toast.makeText(this, "Signed In!", Toast.LENGTH_SHORT).show();
-            } else if (requestCode == RESULT_CANCELED) {
+            } else if (resultCode == RESULT_CANCELED) {
                     Toast.makeText(this, "Signed In Canceled", Toast.LENGTH_SHORT).show();
                     finish();
             }
