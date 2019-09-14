@@ -61,7 +61,7 @@ import androidx.appcompat.app.AppCompatActivity;
 public class MainActivity extends AppCompatActivity {
 
 
-    //test update to fork via android studio6 - starting tutorial day2
+    //test update to fork via android studio6 -  day2 adding photos to friendly chat
 
 
     private static final String TAG = "MainActivity";
