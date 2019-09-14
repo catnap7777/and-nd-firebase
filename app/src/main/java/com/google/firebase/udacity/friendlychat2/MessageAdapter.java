@@ -45,5 +45,6 @@ public class MessageAdapter extends ArrayAdapter<FriendlyMessage> {
         authorTextView.setText(message.getName());
 
         return convertView;
+
     }
 }
