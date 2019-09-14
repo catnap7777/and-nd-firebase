@@ -50,6 +50,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
 
+    //test update to fork via android studio
+
     private static final String TAG = "MainActivity";
 
     public static final String ANONYMOUS = "anonymous";
