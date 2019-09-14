@@ -65,8 +65,8 @@ public class MainActivity extends AppCompatActivity {
     private DatabaseReference mMessagesDatabaseReference;
     private ChildEventListener mChildEventListener;
 
-    //private FirebaseAuth mFirebaseAuth;
-    //private FirebaseAuth.AuthStateListener mAuthStateListener;
+    private FirebaseAuth mFirebaseAuth;
+    private FirebaseAuth.AuthStateListener mAuthStateListener;
 
     private ListView mMessageListView;
     private MessageAdapter mMessageAdapter;
@@ -85,7 +85,7 @@ public class MainActivity extends AppCompatActivity {
         mUsername = ANONYMOUS;
 
         mFirebaseDatabase = FirebaseDatabase.getInstance();
-        //mFirebaseAuth = FirebaseAuth.getInstance();
+        mFirebaseAuth = FirebaseAuth.getInstance();
 
         mMessagesDatabaseReference = mFirebaseDatabase.getReference().child("messages");
 
@@ -186,46 +186,41 @@ public class MainActivity extends AppCompatActivity {
         //.. attaches the "messages" node to the listener
         mMessagesDatabaseReference.addChildEventListener(mChildEventListener);
 
+        mAuthStateListener = new FirebaseAuth.AuthStateListener() {
+            @Override
+            public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
 
+                FirebaseUser user = firebaseAuth.getCurrentUser();
 
-//        mAuthStateListener = new FirebaseAuth.AuthStateListener() {
-//            @Override
-//            public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
-//
-//                FirebaseUser user = firebaseAuth.getCurrentUser();
-//
-//
-//
-//                if (user != null) {
-//                    //user signed in
-//                    Toast.makeText(MainActivity.this,"You are now signed in. Welcome to Friendly Chat",Toast.LENGTH_SHORT).show();
-//
-//                } else {
-//                    //user not signed in
-//                    //.. so kick off login screen
-//
-//
-//                    // Choose authentication providers
-//                    List<AuthUI.IdpConfig> providers = Arrays.asList(
-//                            new AuthUI.IdpConfig.EmailBuilder().build(),
-//                            //new AuthUI.IdpConfig.PhoneBuilder().build(),
-//                            new AuthUI.IdpConfig.GoogleBuilder().build());
-//                    //new AuthUI.IdpConfig.FacebookBuilder().build(),
-//                    //new AuthUI.IdpConfig.TwitterBuilder().build());
+                if (user != null) {
+                    //user signed in
+                    Toast.makeText(MainActivity.this,"You are now signed in. Welcome to Friendly Chat",Toast.LENGTH_SHORT).show();
 
-//                    // Create and launch sign-in inten0;
-//                    startActivityForResult(
-//                            AuthUI.getInstance()
-//                                    .createSignInIntentBuilder()
-//                                    .setAvailableProviders(providers)
-//                                    .build(),
-//                            RC_SIGN_IN);
-//
-//                    System.out.println("***** In MainActivity *****");
-//                }
-//
-//            }
-//        };
+                } else {
+                    //user not signed in
+                    //.. so kick off login screen
+
+                    // Choose authentication providers
+                    List<AuthUI.IdpConfig> providers = Arrays.asList(
+                            new AuthUI.IdpConfig.EmailBuilder().build(),
+                            //new AuthUI.IdpConfig.PhoneBuilder().build(),
+                            new AuthUI.IdpConfig.GoogleBuilder().build());
+                    //new AuthUI.IdpConfig.FacebookBuilder().build(),
+                    //new AuthUI.IdpConfig.TwitterBuilder().build());
+
+                    // Create and launch sign-in inten0;
+                    startActivityForResult(
+                            AuthUI.getInstance()
+                                    .createSignInIntentBuilder()
+                                    .setIsSmartLockEnabled(false)
+                                    .setAvailableProviders(providers)
+                                    .build(),
+                            RC_SIGN_IN);
+
+                }
+
+            }
+        };
 
 
     }
@@ -244,16 +239,16 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-//    @Override
-//    protected void onResume() {
-//        super.onResume();
-//        mFirebaseAuth.addAuthStateListener(mAuthStateListener);
-//    }
-//
-//    @Override
-//    protected void onPause() {
-//        super.onPause();
-//        mFirebaseAuth.removeAuthStateListener(mAuthStateListener);
-//    }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mFirebaseAuth.addAuthStateListener(mAuthStateListener);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mFirebaseAuth.removeAuthStateListener(mAuthStateListener);
+    }
 
 }
