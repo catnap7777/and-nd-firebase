@@ -15,6 +15,7 @@
  */
 package com.google.firebase.udacity.friendlychat2;
 
+import android.content.Intent;
 import android.os.Bundle;
 //import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
@@ -50,7 +51,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
 
-    //test update to fork via android studio3
+    //test update to fork via android studio5
 
     private static final String TAG = "MainActivity";
 
@@ -82,6 +83,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        //..  Initially what was used as username before authentication added
+        //..  Also what mUsername set to when user logs out
         mUsername = ANONYMOUS;
 
         mFirebaseDatabase = FirebaseDatabase.getInstance();
@@ -149,42 +152,52 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        mChildEventListener = new ChildEventListener() {
-            @Override
-            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-
-                //.. get any messages that were added to the database (on initial startup or after
-                //..  while app is "active"
-                FriendlyMessage friendlyMessage = dataSnapshot.getValue(FriendlyMessage.class);
-
-                //.. mMessageAdapter is the list adapter to display the list of messages in the app
-                mMessageAdapter.add(friendlyMessage);
-
-            }
-
-            @Override
-            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-
-            }
-
-            @Override
-            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
-
-            }
-
-            @Override
-            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        };
-
-        //.. attaches the "messages" node to the listener
-        mMessagesDatabaseReference.addChildEventListener(mChildEventListener);
+        //..  This moved down to private void attachedDatabaseReadListener
+        //..  (called from onSignedInInitialize(String username) because
+        //..  we only want to show the user the messages IF user is logged in...
+        //..  Also, because authentication is kicked off first now, mChildEventListener doesn't
+        //..  even work if it's here because the login flow gets displayed instead...
+        //..  This listener doesn't get triggered here because the user isn't logged in yet, because
+        //..  this is in oncreate... "read listener" mChildEventListener must be attached and only works when
+        //..  user is signed in. -> That's why it was "moved" to attachedDatabaseReadListener (called from
+        // ..   onSignedInInitialize method
+        //..
+//        mChildEventListener = new ChildEventListener() {
+//            @Override
+//            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+//
+//                //.. get any messages that were added to the database (on initial startup or after
+//                //..  while app is "active"
+//                FriendlyMessage friendlyMessage = dataSnapshot.getValue(FriendlyMessage.class);
+//
+//                //.. mMessageAdapter is the list adapter to display the list of messages in the app
+//                mMessageAdapter.add(friendlyMessage);
+//
+//            }
+//
+//            @Override
+//            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+//
+//            }
+//
+//            @Override
+//            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+//
+//            }
+//
+//            @Override
+//            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+//
+//            }
+//
+//            @Override
+//            public void onCancelled(@NonNull DatabaseError databaseError) {
+//
+//            }
+//        };
+//
+//        //.. attaches the "messages" node to the listener
+//        mMessagesDatabaseReference.addChildEventListener(mChildEventListener);
 
         mAuthStateListener = new FirebaseAuth.AuthStateListener() {
             @Override
@@ -194,9 +207,11 @@ public class MainActivity extends AppCompatActivity {
 
                 if (user != null) {
                     //user signed in
-                    Toast.makeText(MainActivity.this,"You are now signed in. Welcome to Friendly Chat",Toast.LENGTH_SHORT).show();
+                    //Toast.makeText(MainActivity.this,"You are now signed in. Welcome to Friendly Chat",Toast.LENGTH_SHORT).show();
+                    onSignedInInitialize(user.getDisplayName());
 
                 } else {
+                    onSignedOutCleanup();
                     //user not signed in
                     //.. so kick off login screen
 
@@ -239,6 +254,26 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    //..  This code is called BEFORE onResume and thus allows the user to hit the
+    //..  back button to "exit" the app without signing in (if they're on the signin
+    //..  screen)... Without this, it would be an endless loop attempting to hit the back button
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        //.. User of if with RC_SIGN_IN here means... if the activity that we're being returned from is our login flow,
+        //.. execute the if statement and then check for RESULT_OK or RESULT_CANCELED
+        if (requestCode == RC_SIGN_IN) {
+            if (resultCode == RESULT_OK) {
+                Toast.makeText(this, "Signed In!", Toast.LENGTH_SHORT).show();
+            } else if (requestCode == RESULT_CANCELED) {
+                    Toast.makeText(this, "Signed In Canceled", Toast.LENGTH_SHORT).show();
+                    finish();
+            }
+        }
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -248,7 +283,86 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        mFirebaseAuth.removeAuthStateListener(mAuthStateListener);
+
+        if (mAuthStateListener != null) {
+            mFirebaseAuth.removeAuthStateListener(mAuthStateListener);
+        }
+        mMessageAdapter.clear();
+        detachDatabaseReadListener();
     }
+
+    private void onSignedInInitialize(String username) {
+        mUsername = username;
+        attachDatabaseReadListener();
+
+    }
+
+    private void onSignedOutCleanup() {
+
+        mUsername = ANONYMOUS;
+        mMessageAdapter.clear();
+        detachDatabaseReadListener();
+
+    }
+
+    private void attachDatabaseReadListener() {
+
+        //.. checks to see if a child read listener was already attached (you don't want to
+        //..   attempt to attach it again! So, if the mChildEventListener is "detached", create it
+
+        if (mChildEventListener == null) {
+
+            //.. Used to be above in on create before we added authentication
+            //.. Create the child listener
+            mChildEventListener = new ChildEventListener() {
+                @Override
+                public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+                    //.. get any messages that were added to the database (on initial startup or after
+                    //..  while app is "active"
+                    FriendlyMessage friendlyMessage = dataSnapshot.getValue(FriendlyMessage.class);
+
+                    //.. mMessageAdapter is the list adapter to display the list of messages in the app
+                    mMessageAdapter.add(friendlyMessage);
+
+                }
+
+                @Override
+                public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+                }
+
+                @Override
+                public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+
+                }
+
+                @Override
+                public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                }
+            };
+
+            //.. Attach listener that was just created to the "messages" node of the database
+            mMessagesDatabaseReference.addChildEventListener(mChildEventListener);
+        }
+
+    }
+
+    private void detachDatabaseReadListener() {
+
+        //.. When user logs out, remove the listener
+        //.. If statement enforces that you only attach/detach a listener at one time
+        if(mChildEventListener != null){
+            mMessagesDatabaseReference.removeEventListener(mChildEventListener);
+            mChildEventListener = null;
+        }
+    }
+
 
 }
