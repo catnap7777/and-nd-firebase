@@ -54,4 +54,5 @@ public class FriendlyMessage {
         this.photoUrl = photoUrl;
     }
 
+
 }

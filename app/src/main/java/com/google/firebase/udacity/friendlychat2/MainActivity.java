@@ -75,7 +75,7 @@ public class MainActivity extends AppCompatActivity {
 
     public static final String ANONYMOUS = "anonymous";
     public static final int DEFAULT_MSG_LENGTH_LIMIT = 1000;
-    public static final String FRIENDLY_MSG_LENGTH_KEY = "friendly msg length";
+    public static final String FRIENDLY_MSG_LENGTH_KEY = "friendly_msg_length";
 
     public static final int RC_SIGN_IN = 1;
     private static final int RC_PHOTO_PICKER =  2;
@@ -271,8 +271,14 @@ public class MainActivity extends AppCompatActivity {
         //.. Set up Firebase Remote Config
         FirebaseRemoteConfigSettings configSettings = new FirebaseRemoteConfigSettings.Builder()
                 //  .setDeveloperModeEnabled is depricated / per doc, user .setMinimumFetchIntervalInSeconds(xxxx) instead
+                //.. so, without this, how do we set this up so it does fetches fast if we're developing, rather than slower for users????
+                //..  ???????????????????????????????????????????
+                //..  Also interesting to note that changes to the config only seems to happen after the
+                //..  setMinimumFetchIntervalInSeconds is reached AND the app goes inactive in the backround or is
+                //..  closed by the user.  If the app is open, the config doesn't seem to change right away even
+                //..  if the time interval has passed (makes sense)
                 //.setDeveloperModeEnabled(BuildConfig.DEBUG)
-                .setMinimumFetchIntervalInSeconds(3600) //beware low numbers - could equal throttling; 12 hrs is default, here 3600 was first used
+                .setMinimumFetchIntervalInSeconds(120) //beware low numbers - could equal throttling; 12 hrs is default, here 3600 was first used
                 .build();
 
         mFirebaseRemoteConfig.setConfigSettingsAsync(configSettings);
@@ -283,7 +289,6 @@ public class MainActivity extends AppCompatActivity {
 
         //.. Call method to fetch from the server to see if any of the values have changed
 
-        System.out.println("********** trying to call fetchConfig *************");
         fetchConfig();
 
 
@@ -469,7 +474,6 @@ public class MainActivity extends AppCompatActivity {
     //.. fetches config values from the server to see if any config values have changed in your Firebase project
     private void fetchConfig() {
 
-        System.out.println("********** inside fetchConfig *************");
         mFirebaseRemoteConfig.fetchAndActivate()
                 .addOnCompleteListener(this, new OnCompleteListener<Boolean>() {
                     @Override
@@ -480,14 +484,17 @@ public class MainActivity extends AppCompatActivity {
                             Toast.makeText(MainActivity.this, "Fetch and activate succeeded",
                                     Toast.LENGTH_SHORT).show();
                             applyRetrievedLengthLimit();
+                            System.out.println("********** config parms updated *************");
 
                         } else {
                             Log.w(TAG, "*** Error Fetching Config ***");
                             Toast.makeText(MainActivity.this, "Fetch failed",
                                     Toast.LENGTH_SHORT).show();
                             applyRetrievedLengthLimit();
+                            System.out.println("********** error fetching config parms *************");
+
                         }
-                        //displayWelcomeMessage();
+                        //displayWelcomeMessage(); <--- what is this??????
                     }
                 });
 
@@ -527,6 +534,10 @@ public class MainActivity extends AppCompatActivity {
         mMessageEditText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(friendly_msg_length.intValue())});
 
         Log.d(TAG,FRIENDLY_MSG_LENGTH_KEY + "=" + friendly_msg_length);
+
+        System.out.println("********** inside applyRetrievedLengthLimit *************");
+        System.out.println("********** friendly_msg_length = " + friendly_msg_length);
+
 
     }
 
